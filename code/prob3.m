@@ -61,7 +61,16 @@ B=Aorig(:,:,3);
 
 %% PONGA SU SOLUCIÓN AQUÍ:
 
-C=double(R+G+B)/3; %% << Corrija esto
+C1=double(R+G+B)/3; %% << Corrija esto
+
+%primero ploteo los pixeles
+C=double(C1)/255;
+
+%aplico la mascara con el canal de color para sacar las naranjas
+imR2=(R-G-B);
+masc=(imR2>10);
+imR2=imR2.*masc; 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Problema 3.2
@@ -71,7 +80,25 @@ C=double(R+G+B)/3; %% << Corrija esto
 %% ajuste los umbrales para que la detección de los bordes queden
 %% claros
 
-E=C; %% << Corrija esto
+%E=C; %% << Corrija esto
+%aplico filtro gausiano para sacar las naranjas
+
+fil=fspecial('gaussian',[3,3]); 
+imR2=imfilter(imR2,fil); 
+%ajusto el contraste para que diferenciar las naranjas
+imR2 = double(imR2)/255;
+imR3 = imR2;
+for n=1:512,
+  for m=1:341,
+    imR3(m,n)=imR2(m,n)*255/32;
+    if (imR3(m,n)>1)  
+      imR3(m,n)=1;
+    endif
+  end
+end
+
+%hago canny
+E = edge (imR3, "Canny");
 figure(2);
 imshow(E);
 
@@ -81,5 +108,13 @@ imshow(E);
 
 %% Programe aquí su propuesta de detección de los círculos.
 %% Modularice con funciones tareas complejas.
+H = houghtf(E, "circle", [1, 2]);
+[r, c, Hnew] = houghpeaks(H, 10);
 
-
+masc2=1-(Hnew(:,:,2));
+imR=double(R).*masc2/255;
+imG=double(G).*masc2/255;
+imB=double(B)/255; 
+imFinal=cat(3,imR,imG,imB); 
+figure(3);
+imshow(imFinal);
